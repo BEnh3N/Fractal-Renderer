@@ -1,14 +1,12 @@
 use pixels::{Error, Pixels, SurfaceTexture};
-use winit::dpi::{LogicalSize, PhysicalSize};
+use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: u32 = 1000;
-const HEIGHT: u32 = 500;
-// const WIDTH: u32 = 2000;
-// const HEIGHT: u32 = 1000;
+const WIDTH: u32 = 960;
+const HEIGHT: u32 = 540;
 const SAMPLES: usize = 50;
 
 fn main() -> Result<(), Error> {
@@ -58,18 +56,25 @@ fn main() -> Result<(), Error> {
 }
 
 /// Representation of the application state.
-struct Model {}
+struct Model {
+    constant: (f64, f64),
+}
 
 impl Model {
     fn new() -> Self {
-        Self {}
+        Self {
+            constant: (-0.8, 0.156),
+        }
     }
 
-    fn update(&mut self) {}
+    fn update(&mut self) {
+        // self.constant.0 += 0.01;
+        // self.constant.1 -= 0.01;
+    }
 
     fn draw(&self, frame: &mut [u8]) {
         // Compute the scale of the coordinates
-        let scale = 1. / (HEIGHT as f64 / 3.);
+        let scale = 1. / (HEIGHT as f64 / 2.);
 
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
             let x = (i % WIDTH as usize) as i16;
@@ -80,9 +85,10 @@ impl Model {
             let py = (y as f64 - HEIGHT as f64 / 2.) * scale;
 
             // Compute color
-            // let iterations = compute_iterations((px, py), (-0.7269, -0.3842), SAMPLES);
-            let iterations = compute_iterations((0., 0.), (px, py), SAMPLES);
-            let g = ((iterations as f32 / SAMPLES as f32) * 255.) as u8;
+            let iterations = compute_iterations((px, py), self.constant, SAMPLES);
+            // let iterations = compute_iterations((0., 0.), (px, py), SAMPLES);
+            // let g = ((iterations as f64 / SAMPLES as f64) * 255.) as u8;
+            let g = (iterations * 255 as f64) as u8;
             let rgba = [g, g, g, 0xff];
 
             pixel.copy_from_slice(&rgba);
@@ -106,12 +112,15 @@ fn abs(z: (f64, f64)) -> f64 {
 }
 
 // Computes sequence elements until abs exceeds threshold or max iteration is reached
-fn compute_iterations(z0: (f64, f64), constant: (f64, f64), max_iteration: usize) -> usize {
+fn compute_iterations(z0: (f64, f64), constant: (f64, f64), max_iteration: usize) -> f64 {
     let mut zn = z0;
     let mut iteration = 0;
     while abs(zn) < 4. && iteration < max_iteration {
         zn = compute_next(zn, constant);
         iteration += 1;
     }
-    iteration
+
+    let modi = abs(zn).sqrt();
+    let smooth_iteration = (1_f64).max(modi.log2()).log2();
+    smooth_iteration
 }
