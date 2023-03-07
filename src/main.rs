@@ -5,9 +5,9 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-const WIDTH: u32 = 960;
-const HEIGHT: u32 = 540;
-const SAMPLES: usize = 50;
+const WIDTH: u32 = 1920/2;
+const HEIGHT: u32 = 1080/2;
+const MAX_ITERATION: usize = 500;
 
 fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
@@ -48,6 +48,10 @@ fn main() -> Result<(), Error> {
                 return;
             }
 
+            if input.key_pressed(VirtualKeyCode::Space) {
+                world.redraw = true;
+            }
+
             // Update internal state and request a redraw
             world.update();
             window.request_redraw();
@@ -57,12 +61,14 @@ fn main() -> Result<(), Error> {
 
 /// Representation of the application state.
 struct Model {
+    redraw: bool,
     constant: (f64, f64),
 }
 
 impl Model {
     fn new() -> Self {
         Self {
+            redraw: true,
             constant: (-0.8, 0.156),
         }
     }
@@ -72,26 +78,35 @@ impl Model {
         // self.constant.1 -= 0.01;
     }
 
-    fn draw(&self, frame: &mut [u8]) {
-        // Compute the scale of the coordinates
-        let scale = 1. / (HEIGHT as f64 / 2.);
+    fn draw(&mut self, frame: &mut [u8]) {
+        if self.redraw {
+            dbg!("Redraw Request");
+            // Compute the scale of the coordinates
+            let scale = 1. / (HEIGHT as f64 / 2.);
 
-        for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
-            let x = (i % WIDTH as usize) as i16;
-            let y = (i / WIDTH as usize) as i16;
+            for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
+                let x = (i % WIDTH as usize) as i16;
+                let y = (i / WIDTH as usize) as i16;
 
-            // Compute pixel's coordinates
-            let px = (x as f64 - WIDTH as f64 / 2.) * scale;
-            let py = (y as f64 - HEIGHT as f64 / 2.) * scale;
+                let samples = 16;
+                let mut color = 0.;
+                for _ in 0..samples {
+                    // Compute pixel's coordinates
+                    let px = ((x as f64 - WIDTH  as f64 / 2.) + rand::random::<f64>()) * scale;
+                    let py = ((y as f64 - HEIGHT as f64 / 2.) + rand::random::<f64>()) * scale;
+                    // Compute color
+                    let iterations = compute_iterations((px, py), self.constant, MAX_ITERATION);
+                    color += iterations;
+                }
 
-            // Compute color
-            let iterations = compute_iterations((px, py), self.constant, SAMPLES);
-            // let iterations = compute_iterations((0., 0.), (px, py), SAMPLES);
-            // let g = ((iterations as f64 / SAMPLES as f64) * 255.) as u8;
-            let g = (iterations * 255 as f64) as u8;
-            let rgba = [g, g, g, 0xff];
+                // let iterations = compute_iterations((0., 0.), (px, py), SAMPLES);
+                let g = (((color / samples as f64) / MAX_ITERATION as f64) * 255.) as u8;
+                // let g = (iterations * 255 as f64) as u8;
+                let rgba = [g, g, g, 0xff];
 
-            pixel.copy_from_slice(&rgba);
+                pixel.copy_from_slice(&rgba);
+            }
+            self.redraw = false;
         }
     }
 }
@@ -121,6 +136,8 @@ fn compute_iterations(z0: (f64, f64), constant: (f64, f64), max_iteration: usize
     }
 
     let modi = abs(zn).sqrt();
-    let smooth_iteration = (1_f64).max(modi.log2()).log2();
+    let smooth_iteration = iteration as f64 - (1_f64).max(modi.log2()).log2();
     smooth_iteration
+
+    // iteration as f64
 }
