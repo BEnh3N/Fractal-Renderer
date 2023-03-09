@@ -103,7 +103,8 @@ impl Model {
     }
 
     fn update(&mut self) {
-        // self.scale = self.scale * 0.90;
+        self.scale = self.scale * 0.90;
+        self.redraw = true;
     }
 
     fn draw(&mut self, frame: &mut [u8]) {
@@ -114,7 +115,7 @@ impl Model {
                 let x = (i % WIDTH as usize) as i16;
                 let y = (i / WIDTH as usize) as i16;
 
-                let samples = 16;
+                let samples = 8;
                 let mut color = 0.;
                 for _ in 0..samples {
                     // Compute pixel's coordinates
@@ -133,7 +134,7 @@ impl Model {
             }); 
             dbg!(current.elapsed().as_secs_f32());
         }
-        self.redraw = true;
+        self.redraw = false;
     }
 }
 
