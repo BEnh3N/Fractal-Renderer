@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use pixels::{Error, Pixels, SurfaceTexture};
 use winit::dpi::{PhysicalSize};
 use winit::event::{Event, VirtualKeyCode};
@@ -95,36 +97,29 @@ impl Model {
 
     fn draw(&mut self, frame: &mut [u8]) {
         if self.redraw {
+            let current = Instant::now();
             // Compute the scale of the coordinates
             frame.par_chunks_exact_mut(4).enumerate().for_each(|(i, pixel)| {
                 let x = (i % WIDTH as usize) as i16;
                 let y = (i / WIDTH as usize) as i16;
 
-                // let samples = 16;
-                // let mut color = 0.;
-                // for _ in 0..samples {
-                //     // Compute pixel's coordinates
-                //     let px = ((x as f64 - WIDTH  as f64 / 2.) + rand::random::<f64>()) * self.scale;
-                //     let py = ((y as f64 - HEIGHT as f64 / 2.) + rand::random::<f64>()) * self.scale;
-                //     // Compute color
-                //     let iterations = compute_iterations((0., 0.), (px, py), MAX_ITERATION);
-                //     color += iterations;
-                // }
+                let samples = 4;
+                let mut color = 0.;
+                for _ in 0..samples {
+                    // Compute pixel's coordinates
+                    let px = ((x as f64 - WIDTH  as f64 / 2.) + rand::random::<f64>()) * self.scale;
+                    let py = ((y as f64 - HEIGHT as f64 / 2.) + rand::random::<f64>()) * self.scale;
+                    // Compute color
+                    let iterations = compute_iterations((px, py), self.constant, MAX_ITERATION);
+                    color += iterations;
+                }
 
-                // let g = (((color / samples as f64) / MAX_ITERATION as f64) * 255.) as u8;
-
-                // Compute pixel's coordinates
-                let px = (x as f64 - WIDTH  as f64 / 2.) * self.scale;
-                let py = (y as f64 - HEIGHT as f64 / 2.) * self.scale;
-                // Compute color
-                let iterations = compute_iterations((0., 0.), (px, py), MAX_ITERATION);
-
-                let g = ((iterations/ MAX_ITERATION as f64) * 255.) as u8;
+                let g = (((color / samples as f64) / MAX_ITERATION as f64) * 255.) as u8;
 
                 let rgba = [g, g, g, 0xff];
-
                 pixel.copy_from_slice(&rgba);
             }); 
+            dbg!(current.elapsed().as_secs_f32());
         }
         self.redraw = false;
     }
