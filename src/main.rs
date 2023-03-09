@@ -13,6 +13,8 @@ const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
 const MAX_ITERATION: usize = 500;
 
+const RATIO: f64 = 1.618033988749;
+
 fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
@@ -77,6 +79,7 @@ fn main() -> Result<(), Error> {
 /// Representation of the application state.
 struct Model {
     redraw: bool,
+    // theta: f64,
     constant: (f64, f64),
     scale: f64,
 }
@@ -85,14 +88,13 @@ impl Model {
     fn new() -> Self {
         Self {
             redraw: true,
-            constant: (-0.8, 0.156),
+            constant: (-0.7269, 0.1889),
             scale: 1. / (HEIGHT as f64 / 2.),
         }
     }
 
     fn update(&mut self) {
-        // self.constant.0 += 0.01;
-        // self.constant.1 -= 0.01;
+        self.scale = self.scale * 0.90;
     }
 
     fn draw(&mut self, frame: &mut [u8]) {
@@ -110,6 +112,7 @@ impl Model {
                     let px = ((x as f64 - WIDTH  as f64 / 2.) + rand::random::<f64>()) * self.scale;
                     let py = ((y as f64 - HEIGHT as f64 / 2.) + rand::random::<f64>()) * self.scale;
                     // Compute color
+                    // let iterations = compute_iterations((0., 0.), (px, py), MAX_ITERATION);
                     let iterations = compute_iterations((px, py), self.constant, MAX_ITERATION);
                     color += iterations;
                 }
@@ -121,7 +124,7 @@ impl Model {
             }); 
             dbg!(current.elapsed().as_secs_f32());
         }
-        self.redraw = false;
+        self.redraw = true;
     }
 }
 
