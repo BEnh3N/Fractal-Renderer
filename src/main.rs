@@ -4,22 +4,25 @@ use pixels::{Error, Pixels, SurfaceTexture};
 use winit::dpi::{PhysicalSize};
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::WindowBuilder;
+use winit::window::{WindowBuilder, Fullscreen};
 use winit_input_helper::WinitInputHelper;
 
 use rayon::prelude::*;
+
+const FULLSCREEN: bool = true;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
 const MAX_ITERATION: usize = 500;
 
-const RATIO: f64 = 1.618033988749;
+// const RATIO: f64 = 1.618033988749;
 
 fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
         let size = PhysicalSize::new(WIDTH as f64, HEIGHT as f64);
+        // let monitor = winit::monitor::MonitorHandle::;
         WindowBuilder::new()
             .with_title("Fractal")
             .with_inner_size(size)
@@ -27,6 +30,12 @@ fn main() -> Result<(), Error> {
             .build(&event_loop)
             .unwrap()
     };
+
+    // Set window to fullscreen
+    if FULLSCREEN {
+        let monitor_handle = window.available_monitors().next();
+        window.set_fullscreen(Some(Fullscreen::Borderless(monitor_handle)));
+    }
 
     let mut pixels = {
         let window_size = window.inner_size();
@@ -94,7 +103,7 @@ impl Model {
     }
 
     fn update(&mut self) {
-        self.scale = self.scale * 0.90;
+        // self.scale = self.scale * 0.90;
     }
 
     fn draw(&mut self, frame: &mut [u8]) {
@@ -105,7 +114,7 @@ impl Model {
                 let x = (i % WIDTH as usize) as i16;
                 let y = (i / WIDTH as usize) as i16;
 
-                let samples = 4;
+                let samples = 16;
                 let mut color = 0.;
                 for _ in 0..samples {
                     // Compute pixel's coordinates
