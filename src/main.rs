@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use pixels::{Error, Pixels, SurfaceTexture};
-use winit::dpi::{PhysicalSize};
+use winit::dpi::PhysicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::{WindowBuilder, Fullscreen};
