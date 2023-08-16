@@ -4,7 +4,7 @@ use pixels::{Error, Pixels, SurfaceTexture};
 use winit::dpi::PhysicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{WindowBuilder, Fullscreen};
+use winit::window::{Fullscreen, WindowBuilder};
 use winit_input_helper::WinitInputHelper;
 
 use rayon::prelude::*;
@@ -13,7 +13,7 @@ const FULLSCREEN: bool = true;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
-const MAX_ITERATION: usize = 500;
+const MAX_ITERATION: usize = 50;
 
 // const RATIO: f64 = 1.618033988749;
 
@@ -22,7 +22,6 @@ fn main() -> Result<(), Error> {
     let mut input = WinitInputHelper::new();
     let window = {
         let size = PhysicalSize::new(WIDTH as f64, HEIGHT as f64);
-        // let monitor = winit::monitor::MonitorHandle::;
         WindowBuilder::new()
             .with_title("Fractal")
             .with_inner_size(size)
@@ -103,7 +102,7 @@ impl Model {
     }
 
     fn update(&mut self) {
-        self.scale = self.scale * 0.90;
+        // self.scale = self.scale * 0.90;
         self.redraw = true;
     }
 
@@ -111,27 +110,32 @@ impl Model {
         if self.redraw {
             let current = Instant::now();
             // Compute the scale of the coordinates
-            frame.par_chunks_exact_mut(4).enumerate().for_each(|(i, pixel)| {
-                let x = (i % WIDTH as usize) as i16;
-                let y = (i / WIDTH as usize) as i16;
+            frame
+                .par_chunks_exact_mut(4)
+                .enumerate()
+                .for_each(|(i, pixel)| {
+                    let x = (i % WIDTH as usize) as i16;
+                    let y = (i / WIDTH as usize) as i16;
 
-                let samples = 8;
-                let mut color = 0.;
-                for _ in 0..samples {
-                    // Compute pixel's coordinates
-                    let px = ((x as f64 - WIDTH  as f64 / 2.) + rand::random::<f64>()) * self.scale;
-                    let py = ((y as f64 - HEIGHT as f64 / 2.) + rand::random::<f64>()) * self.scale;
-                    // Compute color
-                    // let iterations = compute_iterations((0., 0.), (px, py), MAX_ITERATION);
-                    let iterations = compute_iterations((px, py), self.constant, MAX_ITERATION);
-                    color += iterations;
-                }
+                    let samples = 1;
+                    let mut color = 0.;
+                    for _ in 0..samples {
+                        // Compute pixel's coordinates
+                        let px =
+                            ((x as f64 - WIDTH as f64 / 2.) + rand::random::<f64>()) * self.scale;
+                        let py =
+                            ((y as f64 - HEIGHT as f64 / 2.) + rand::random::<f64>()) * self.scale;
+                        // Compute color
+                        let iterations = compute_iterations((0., 0.), (px, py), MAX_ITERATION);
+                        // let iterations = compute_iterations((px, py), self.constant, MAX_ITERATION);
+                        color += iterations;
+                    }
 
-                let g = (((color / samples as f64) / MAX_ITERATION as f64) * 255.) as u8;
+                    let g = (((color / samples as f64) / MAX_ITERATION as f64) * 255.) as u8;
 
-                let rgba = [g, g, g, 0xff];
-                pixel.copy_from_slice(&rgba);
-            }); 
+                    let rgba = [g, g, g, 0xff];
+                    pixel.copy_from_slice(&rgba);
+                });
             dbg!(current.elapsed().as_secs_f32());
         }
         self.redraw = false;
